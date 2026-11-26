@@ -6,6 +6,7 @@ set -euo pipefail
 repo=$(realpath -m "${1:?usage: build.sh <ostree repo> [gpg key id]}")
 sign=${2:+--gpg-sign=$2}
 cd "$(dirname "$0")/.."
+shopt -s nullglob # no manifests, nothing to build
 
 for manifest in apps/*/*.yml; do
   dir=$(dirname "$manifest")

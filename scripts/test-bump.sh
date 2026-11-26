@@ -39,4 +39,37 @@ refused 2.0.0 https://github.com/zimavi/../other/app.tar.gz "$sha"
 refused 2.0.0 "$url" abc
 has stable.yml 1.0.1
 has beta.yml 1.1.0-beta.1
+
+# Chosen branches: only those change.
+bump 1.2.0 "$url" "$sha" stable
+has stable.yml 1.2.0
+has beta.yml 1.1.0-beta.1
+refused 1.0.0 "$url" "$sha" beta          # a chosen branch never goes back
+refused 1.3.0-beta.1 "$url" "$sha" stable # no pre-release in stable
+refused 1.3.0 "$url" "$sha" nightly       # an unknown branch is not created
+refused 1.3.0 "$url" "$sha" ../beta
+refused 1.3.0 "$url" "$sha" stable nightly
+has stable.yml 1.2.0 # nothing changed, although stable alone was fine
+[[ ! -e nightly.yml ]]
+cp beta.yml nightly.yml
+bump 1.3.0-nightly.1 "$url" "$sha" nightly
+has nightly.yml 1.3.0-nightly.1
+has beta.yml 1.1.0-beta.1
+
+# A bad file stops the whole release.
+sed -i '/sha256:/d' beta.yml
+refused 2.0.0 "$url" "$sha"
+has stable.yml 1.2.0
+
+# An app with only stable gets no beta from a final release, but does from a pre-release.
+rm beta.yml nightly.yml
+bump 1.4.0 "$url" "$sha"
+has stable.yml 1.4.0
+[[ ! -e beta.yml ]]
+bump 1.5.0-beta.1 "$url" "$sha"
+has beta.yml 1.5.0-beta.1
+has stable.yml 1.4.0
+
+rm beta.yml stable.yml
+refused 2.0.0 "$url" "$sha" # nothing to start from
 echo "bump.sh: all checks passed"
