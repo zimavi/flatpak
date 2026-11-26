@@ -33,6 +33,7 @@ modules:
       - install -Dm644 ua.net.zimavi.Shirabe.desktop -t /app/share/applications
       - install -Dm644 icon-512.png /app/share/icons/hicolor/512x512/apps/ua.net.zimavi.Shirabe.png
       - sed -i "s/@VERSION@/$VERSION/; s/@RELEASE_DATE@/$RELEASE_DATE/" ua.net.zimavi.Shirabe.metainfo.xml
+      - sed -i 's/<component /<component priority="1" /' ua.net.zimavi.Shirabe.metainfo.xml
       - install -Dm644 ua.net.zimavi.Shirabe.metainfo.xml -t /app/share/metainfo
     sources:
       - type: archive
