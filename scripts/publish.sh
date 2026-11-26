@@ -29,8 +29,20 @@ fi
 # R2 has no empty directories, ostree needs them.
 mkdir -p "$repo"/{objects,tmp,state,extensions,refs/heads,refs/remotes,refs/mirrors}
 
+# A removed manifest unpublishes its branch. Never all of them: no manifest at all means something is wrong.
+compgen -G 'apps/*/*.yml' >/dev/null || { echo "publish.sh: no manifests, not publishing" >&2; exit 1; }
+refs=$(ostree --repo="$repo" refs)
+for ref in $refs; do
+  IFS=/ read -r kind app _ branch <<<"$ref"
+  [[ $kind == app || $kind == runtime ]] || continue
+  # <app-id>.Locale and other extensions belong to the app's manifest.
+  while [[ $app == *.* && ! -d apps/$app ]]; do app=${app%.*}; done
+  [[ -f apps/$app/$branch.yml ]] || { echo "unpublishing $ref"; ostree --repo="$repo" refs --delete "$ref"; }
+done
+
 bash scripts/build.sh "$repo" "$key"
-flatpak build-update-repo --title=zimavi --default-branch=stable --gpg-sign="$key" --generate-static-deltas --prune --prune-depth=3 "$repo"
+setting() { sed -n "s/^$1=//p" zimavi.flatpakrepo; }
+flatpak build-update-repo --title="$(setting Title)" --default-branch="$(setting DefaultBranch)" --gpg-sign="$key" --generate-static-deltas --prune --prune-depth=3 "$repo"
 
 # Order matters to clients: first the data, then what points at it, and deletions last.
 skip=(--exclude '/tmp/**' --exclude '.lock')
