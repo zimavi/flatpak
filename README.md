@@ -16,21 +16,27 @@ x86_64 only.
 |---|---|---|
 | [Shirabe](https://github.com/zimavi/Shirabe.Client) | `ua.net.zimavi.Shirabe` | Bundles BASS, which is free for non-commercial use only |
 
-`flatpak remote-ls zimavi` lists the branches that are currently published.
+`flatpak remote-ls zimavi` lists what is currently published.
 
-## Branches
+## Beta
 
-`stable` is the default and has final releases. `beta` has pre-releases and also receives final releases. An app may
-have only one of them, or additional branches. To pick one:
+This repository has final releases only, in the `stable` branch. Pre-releases are in
+[flatpak-beta](https://github.com/zimavi/flatpak-beta), a separate remote with a `beta` branch.
+
+If you installed a `beta` branch from this remote, it gets no more updates here. Move to the new remote (settings and
+data are kept):
 
 ```sh
-flatpak install zimavi <app-id>//beta
+flatpak uninstall <app-id>//beta
+flatpak remote-add --if-not-exists zimavi-beta https://flatpak-beta.zimavi.net.ua/zimavi.flatpakrepo
+flatpak install zimavi-beta <app-id>//beta
 ```
 
 ## How it works
 
 Each `apps/<app-id>/<branch>.yml` is a Flatpak manifest that repackages a GitHub release; the file name is the branch,
-so every `.yml` in an app folder is built. The other files of the folder are shared by its branches.
+so every `.yml` in an app folder is built. The other files of the folder are shared by its branches. Removing a manifest
+unpublishes its branch.
 
 1. The app's repository runs `scripts/bump.sh` on a checkout of this one and opens a pull request that merges itself.
 2. `check` builds the pull request.
@@ -41,26 +47,21 @@ Run `publish` by hand (Actions tab) to retry a failed upload.
 By hand:
 
 ```sh
-RELEASE_DATE=<YYYY-MM-DD> scripts/bump.sh <app-id> <version> <url of the release file> <sha256> [branch...]
+RELEASE_DATE=<YYYY-MM-DD> scripts/bump.sh <app-id> <version> <url of the release file> <sha256>
 scripts/build.sh /tmp/repo   # needs flatpak-builder and the SDKs the manifests name
 ```
 
-`RELEASE_DATE` defaults to today. Which manifests `bump.sh` updates:
+`RELEASE_DATE` defaults to today. `bump.sh` updates the manifest of this repository's branch (the `DefaultBranch` of
+`zimavi.flatpakrepo`) and refuses an older version. A pre-release changes nothing here.
 
-| Call | Updated |
-|---|---|
-| Pre-release such as `1.0.0-beta.1` | `beta` |
-| Final release | `stable`, and `beta` if the app has it, unless `beta` is newer |
-| With branch names | Exactly those; pre-releases are refused for `stable` |
-
-A missing `stable.yml` or `beta.yml` is created from the other one. Any other branch needs its manifest first. A
-version older than the one in the release's own branch, or in a named branch, is refused.
+flatpak and flatpak-beta have the same scripts and workflows: change them in both. Each has its own `apps/`, including
+the desktop entry, metainfo and icon.
 
 ## Adding an app
 
 Create `apps/<app-id>/` with:
 
-- `beta.yml` or `stable.yml`, the manifest. With only `beta.yml`, the first final release creates `stable.yml`.
+- `stable.yml`, the manifest (`beta.yml` in flatpak-beta).
 - The files the manifest installs, such as the desktop entry, AppStream metainfo and icon.
 
 For `bump.sh` to update a manifest:
@@ -86,7 +87,9 @@ Environment `publish` (limited to `main`):
 The bucket is served at `https://flatpak.zimavi.net.ua`. Do not add a "cache everything" rule for it: clients need a
 fresh `repo/summary`.
 
-An app repository needs a secret `FLATPAK_TOKEN`: a fine-grained token for this repository only, with *Contents* and
-*Pull requests* read and write. **Whoever holds it can publish to every user.**
+The repository also needs *Allow auto-merge*, and a rule on `main` that requires a pull request and the `check` status.
+
+An app repository needs a secret `FLATPAK_TOKEN`: a fine-grained token for flatpak and flatpak-beta only, with
+*Contents* and *Pull requests* read and write. **Whoever holds it can publish to every user.**
 
 **Back up the signing key offline.** Without it, every user has to remove the remote and add it again.
