@@ -3,3 +3,4 @@ Title=zimavi
 Comment=Applications by zimavi
 Url=https://flatpak.zimavi.net.ua/repo/
 Homepage=https://github.com/zimavi/flatpak
+DefaultBranch=stable

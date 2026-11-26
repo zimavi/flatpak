@@ -30,7 +30,7 @@ fi
 mkdir -p "$repo"/{objects,tmp,state,extensions,refs/heads,refs/remotes,refs/mirrors}
 
 bash scripts/build.sh "$repo" "$key"
-flatpak build-update-repo --title=zimavi --gpg-sign="$key" --generate-static-deltas --prune --prune-depth=3 "$repo"
+flatpak build-update-repo --title=zimavi --default-branch=stable --gpg-sign="$key" --generate-static-deltas --prune --prune-depth=3 "$repo"
 
 # Order matters to clients: first the data, then what points at it, and deletions last.
 skip=(--exclude '/tmp/**' --exclude '.lock')
